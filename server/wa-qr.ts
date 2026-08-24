@@ -135,7 +135,7 @@ async function main(): Promise<void> {
     autoClose: 0,
     puppeteerOptions: {
       executablePath: CHROME,
-      args: ['--no-sandbox', '--disable-gpu'],
+      args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--disable-setuid-sandbox', '--single-process'],
     },
     catchQR: (qrBase64) => {
       latestQr = qrBase64

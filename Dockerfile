@@ -24,7 +24,8 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUPPETEER_SKIP_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
     CHROME_PATH=/usr/bin/chromium \
-    WA_HEADLESS=true
+    WA_HEADLESS=true \
+    NODE_ENV=production
 
 WORKDIR /app
 COPY package*.json ./
