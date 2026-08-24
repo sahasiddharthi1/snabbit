@@ -6,3 +6,5 @@ tokens
 .env.local
 *.log
 .git
+
+.vercel
