@@ -26,16 +26,17 @@ import type { OutboundMessage } from './whatsapp'
 
 const SESSION = process.env.WA_SESSION ?? 'snabbit'
 const QR_PORT = Number(process.env.QR_PORT ?? 9090)
-const CHROME = process.env.CHROME_PATH ?? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+const CHROME = process.env.CHROME_PATH
 const HEADLESS = process.env.WA_HEADLESS !== 'false'
 
 let latestQr = ''
 let qrAttempts = 0
+let botStatus = 'starting'
 
 createServer((req, res) => {
   if (req.url === '/qr.json') {
     res.setHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify({ qr: latestQr, attempts: qrAttempts, rag: getStats(), gemini: isGeminiReady(), razorpay: isRazorpayReady() }))
+    res.end(JSON.stringify({ qr: latestQr, attempts: qrAttempts, status: botStatus, rag: getStats(), gemini: isGeminiReady(), razorpay: isRazorpayReady() }))
     return
   }
   res.setHeader('Content-Type', 'text/html; charset=utf-8')
@@ -52,7 +53,7 @@ async function poll(){
     const r=await fetch('/qr.json'); const d=await r.json();
     if(d.qr){ document.getElementById('qr').src=d.qr; document.getElementById('hint').textContent='QR updated — scan with your phone'; }
     else { document.getElementById('hint').textContent='Waiting for QR...'; }
-    document.getElementById('stats').textContent='RAG: '+d.rag.total+' records, '+d.rag.localities+' areas, '+d.rag.services+' services | Gemini: '+(d.gemini?'ON':'OFF')+' | Razorpay: '+(d.razorpay?'ON':'OFF');
+    document.getElementById('stats').textContent='Status: '+d.status+' | RAG: '+d.rag.total+' records | Gemini: '+(d.gemini?'ON':'OFF')+' | Razorpay: '+(d.razorpay?'ON':'OFF');
   }catch(e){}
   setTimeout(poll,1500);
 }
@@ -135,17 +136,34 @@ async function main(): Promise<void> {
     autoClose: 0,
     puppeteerOptions: {
       executablePath: CHROME,
-      args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--disable-setuid-sandbox', '--single-process'],
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-background-networking',
+        '--disable-extensions',
+        '--disable-sync',
+        '--disable-translate',
+        '--metrics-recording-only',
+      ],
     },
     catchQR: (qrBase64) => {
       latestQr = qrBase64
       qrAttempts += 1
-      console.log(`\n[qr] New QR generated (attempt ${qrAttempts}) — scan it at http://localhost:${QR_PORT}`)
+      botStatus = 'qr_ready'
+      console.log(`[qr] New QR generated (attempt ${qrAttempts})`)
     },
     statusFind: (status, session) => {
       console.log(`[status] ${status} (session: ${session})`)
       if (String(status).toLowerCase() === 'ready') {
+        botStatus = 'connected'
         console.log('[bot] ✅ Online — message your WhatsApp number')
+      } else if (String(status).toLowerCase().includes('discon')) {
+        botStatus = 'disconnected'
       }
     },
   })

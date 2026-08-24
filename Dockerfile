@@ -1,9 +1,7 @@
-FROM node:22-slim
+FROM node:22
 
 RUN apt-get update && apt-get install -y \
-    chromium \
     fonts-liberation \
-    libappindicator3-1 \
     libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
@@ -20,15 +18,11 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_SKIP_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
-    CHROME_PATH=/usr/bin/chromium \
-    WA_HEADLESS=true
+ENV WA_HEADLESS=true
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm install --ignore-scripts && npx esbuild --version
+RUN npm install && npx puppeteer browsers install chrome
 COPY . .
 RUN npm run build
 
