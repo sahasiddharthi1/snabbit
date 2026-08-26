@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: snabbit-prod
+    runtime: docker
+    dockerfilePath: Dockerfile
+    plan: starter
+    healthCheckPath: /
+    envVars:
+      - key: WA_HEADLESS
+        value: "true"
+      - key: WA_SESSION
+        value: "snabbit-prod"

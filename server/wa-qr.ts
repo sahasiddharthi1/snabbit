@@ -55,7 +55,7 @@ async function poll(){
     else { document.getElementById('hint').textContent='Waiting for QR...'; }
     document.getElementById('stats').textContent='Status: '+d.status+' | RAG: '+d.rag.total+' records | Gemini: '+(d.gemini?'ON':'OFF')+' | Razorpay: '+(d.razorpay?'ON':'OFF');
   }catch(e){}
-  setTimeout(poll,1500);
+  setTimeout(poll,800);
 }
 poll();
 </script>
@@ -134,6 +134,22 @@ async function main(): Promise<void> {
     headless: HEADLESS,
     logQR: false,
     autoClose: 0,
+    restartOnNewSessions: true,
+    catchQR: (qrBase64) => {
+      latestQr = qrBase64
+      qrAttempts += 1
+      botStatus = 'qr_ready'
+      console.log(`[qr] New QR #${qrAttempts}`)
+    },
+    statusFind: (status, session) => {
+      console.log(`[status] ${status} (session: ${session})`)
+      if (String(status).toLowerCase() === 'ready') {
+        botStatus = 'connected'
+        console.log('[bot] ✅ Online — message your WhatsApp number')
+      } else if (String(status).toLowerCase().includes('discon')) {
+        botStatus = 'disconnected'
+      }
+    },
     puppeteerOptions: {
       executablePath: CHROME,
       args: [
@@ -150,21 +166,6 @@ async function main(): Promise<void> {
         '--disable-translate',
         '--metrics-recording-only',
       ],
-    },
-    catchQR: (qrBase64) => {
-      latestQr = qrBase64
-      qrAttempts += 1
-      botStatus = 'qr_ready'
-      console.log(`[qr] New QR generated (attempt ${qrAttempts})`)
-    },
-    statusFind: (status, session) => {
-      console.log(`[status] ${status} (session: ${session})`)
-      if (String(status).toLowerCase() === 'ready') {
-        botStatus = 'connected'
-        console.log('[bot] ✅ Online — message your WhatsApp number')
-      } else if (String(status).toLowerCase().includes('discon')) {
-        botStatus = 'disconnected'
-      }
     },
   })
 
